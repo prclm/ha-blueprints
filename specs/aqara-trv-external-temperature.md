@@ -74,6 +74,8 @@ Aqara TRV E1
 - Consume only the documented temperature event.
 - Validate the event version and required payload fields.
 - Filter events by the configured source when source filtering is enabled.
+  Source filtering is enabled by default for safety and compatibility with
+  shared temperature sources.
 - Apply the destination device's configurable minimum update interval.
 - Retain the newest valid value as the pending value while delivery is
   throttled.
@@ -116,6 +118,9 @@ temperature.
   represent the same temperature.
 - No timestamp is duplicated in the payload; Home Assistant's `time_fired`
   metadata is authoritative.
+- Source filtering is a hook-level configuration and defaults to enabled.
+  When enabled, the hook only accepts events whose `source_entity_id` matches
+  the configured source entity.
 - The hook interval is device-specific and is not defined globally by the
   event contract.
 - The Aqara TRV hook selects external-temperature mode after each successful
@@ -156,7 +161,7 @@ temperature.
   mode.
 - [ ] Test that the fallback selects internal mode after the configured period.
 - [ ] Test that repeated fallback checks do not repeatedly write internal mode.
-- [ ] Add source filtering behavior and document its default.
+- [x] Add source filtering behavior and document its default.
 - [ ] Add handling for unavailable, unknown, invalid, and unsupported values.
 - [ ] Add examples for the SONOFF SNZB-02B and Aqara TRV E1.
 - [ ] Validate the YAML and blueprint structure.
@@ -171,7 +176,8 @@ temperature.
 
 - [ ] Decide whether the controller change threshold is measured against the
   last published value or the last observed valid value.
-- [ ] Decide whether the hook should filter by `source_entity_id` by default.
+- [x] Decide whether the hook should filter by `source_entity_id` by default.
+  Default: yes, source filtering is enabled by default for safety.
 - [ ] Decide how the hook should schedule a trailing delivery in Home
   Assistant while preserving pending state across events.
 - [ ] Decide how a failed write affects the pending value and interval timer.

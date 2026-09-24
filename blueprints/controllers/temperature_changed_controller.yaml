@@ -1,0 +1,83 @@
+blueprint:
+  name: Controller - Temperature changed event
+  description: >-
+    Watch a temperature sensor and publish the shared
+    prclm_ha_blueprints_temperature_changed event when it changes enough to
+    matter.
+  domain: automation
+  source_url: >-
+    https://github.com/prclm/ha-blueprints/blob/main/blueprints/controllers/temperature/temperature_changed_controller.yaml
+  input:
+    source_entity:
+      name: Source temperature entity
+      description: The Home Assistant temperature entity to monitor.
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+    change_threshold_celsius:
+      name: Change threshold (°C)
+      description: >-
+        Minimum absolute change required before a new temperature event is
+        published.
+      default: 0.3
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 0.1
+          unit_of_measurement: "°C"
+
+trigger:
+  - platform: state
+    entity_id: !input source_entity
+
+condition:
+  - condition: template
+    value_template: >-
+      {% set state_value = trigger.to_state.state | string %}
+      {{
+        state_value not in ['unknown', 'unavailable', 'none']
+        and state_value | regex_match('^[-+]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:[eE][-+]?\\d+)?$')
+      }}
+
+action:
+  - variables:
+      source_entity_id: "{{ trigger.to_state.entity_id }}"
+      source_device_id: "{{ device_id(trigger.to_state.entity_id) | default(none, true) }}"
+      current_temperature_celsius: "{{ trigger.to_state.state | float(0) }}"
+      previous_temperature_celsius: >-
+        {% set previous_state = trigger.from_state.state if trigger.from_state else none %}
+        {% if previous_state is not none and previous_state not in ['unknown', 'unavailable', 'none'] and previous_state | regex_match('^[-+]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)(?:[eE][-+]?\\d+)?$') %}
+          {{ previous_state | float(0) }}
+        {% else %}
+          {{ none }}
+        {% endif %}
+
+  - choose:
+      - conditions: >-
+          {{
+            previous_temperature_celsius is none
+            or ((current_temperature_celsius | float(0) - previous_temperature_celsius | float(0)) | abs)
+            >= (change_threshold_celsius | float(0))
+          }}
+        sequence:
+          - choose:
+              - conditions: "{{ source_device_id is not none }}"
+                sequence:
+                  - event: prclm_ha_blueprints_temperature_changed
+                    event_data:
+                      event_version: 1
+                      source_entity_id: "{{ source_entity_id }}"
+                      source_device_id: "{{ source_device_id }}"
+                      temperature_celsius: "{{ current_temperature_celsius }}"
+                      temperature_fahrenheit: "{{ (current_temperature_celsius | float(0) * 9 / 5) + 32 }}"
+            default:
+              - event: prclm_ha_blueprints_temperature_changed
+                event_data:
+                  event_version: 1
+                  source_entity_id: "{{ source_entity_id }}"
+                  temperature_celsius: "{{ current_temperature_celsius }}"
+                  temperature_fahrenheit: "{{ (current_temperature_celsius | float(0) * 9 / 5) + 32 }}"
+
+mode: single
