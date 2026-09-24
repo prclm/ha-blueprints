@@ -85,3 +85,11 @@ blueprints/
 Blueprint files should include a `source_url` pointing to their location in this
 repository. This lets Home Assistant show where an imported blueprint came from
 and makes future updates easier to discover.
+
+## Event contracts
+
+Controller and hook blueprints communicate through documented Home Assistant
+events. The shared event names, payloads, versioning rules,
+and expected update behavior are defined in
+[`events/general-rules.md`](events/general-rules.md) and
+[`events/temperature-changed.md`](events/temperature-changed.md).
