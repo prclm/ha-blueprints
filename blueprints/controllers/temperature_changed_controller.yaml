@@ -45,6 +45,7 @@ action:
   - variables:
       source_entity_id: "{{ trigger.to_state.entity_id }}"
       source_device_id: "{{ device_id(trigger.to_state.entity_id) | default(none, true) }}"
+      change_threshold_celsius: !input change_threshold_celsius
       current_temperature_celsius: "{{ trigger.to_state.state | float(0) }}"
       previous_temperature_celsius: >-
         {% set previous_state = trigger.from_state.state if trigger.from_state else none %}
